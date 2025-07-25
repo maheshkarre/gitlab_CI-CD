@@ -1,37 +1,42 @@
-name: Deploy to GCP
+name: Build and Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main      
 
 jobs:
-  deploy:
+  build:
+    permissions: write-all
+    name: GCP-Deploy
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v1
 
-    - name: Set up SSH and Deploy
+    - name: Setup SSH
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+        SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
       run: |
-        # Setup private key
-        mkdir -p ~/.ssh
-        echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
+        mkdir -p ~/.ssh/
+        echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+        echo "$SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
+        echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
         chmod 600 ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa.pub
+        chmod 600 ~/.ssh/known_hosts 
 
-        # Scan and trust host
-        ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
+        # Configure SSH to use this key for GitLab
+        echo -e "Host gitlab.com\n\tIdentityFile ~/.ssh/id_rsa\n" >> ~/.ssh/config
 
-        # 🔐 Add public key to authorized_keys
-        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
-          mkdir -p ~/.ssh &&
-          echo '${{ secrets.GCP_PUBLIC_KEY }}' >> ~/.ssh/authorized_keys &&
-          chmod 700 ~/.ssh &&
-          chmod 600 ~/.ssh/authorized_keys
-        "
+        # Test the SSH connection (optional)
+        ssh -T git@gitlab.com || echo "SSH connection test failed, but continuing..."
 
-        # 🚀 Deploy code
-        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
-          pwd &&
-          echo "welcome to deploy"
-        "
+    - name: Depoly
+      run: |
+
+        echo "Connect to SSH.."
+        ssh edgeproc_admin@34.10.112.225 'pwd'
