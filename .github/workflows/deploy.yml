@@ -28,6 +28,8 @@ jobs:
         chmod 700 ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa.pub
         chmod 600 ~/.ssh/known_hosts
+
+        wc -l ~/.ssh/id_rsa
  
         ssh-keyscan -H 34.10.112.225 >> ~/.ssh/known_hosts
 
