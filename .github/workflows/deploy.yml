@@ -39,4 +39,4 @@ jobs:
       run: |
 
         echo "Connect to SSH.."
-        ssh edgeproc_admin@34.10.112.225 'pwd'
+        ssh -i ~/.ssh/id_rsa edgeproc_admin@34.10.112.225 'pwd'
