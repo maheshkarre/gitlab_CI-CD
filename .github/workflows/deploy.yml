@@ -1,30 +1,37 @@
-name: Deploy to GCP VM
+name: Deploy to GCP
 
 on:
   push:
-    branches:
-      - main  # Or your deployment branch
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
+    - name: Set up SSH and Deploy
+      run: |
+        # Setup private key
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
 
-      - name: Deploy via SSH
-        run: |
-          ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
-            cd ${{ secrets.DEPLOY_PATH }} && 
-            pwd && 
-            echo '✅ Deploy done'
-          "
+        # Scan and trust host
+        ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
 
+        # 🔐 Add public key to authorized_keys
+        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+          mkdir -p ~/.ssh &&
+          echo '${{ secrets.GCP_PUBLIC_KEY }}' >> ~/.ssh/authorized_keys &&
+          chmod 700 ~/.ssh &&
+          chmod 600 ~/.ssh/authorized_keys
+        "
+
+        # 🚀 Deploy code
+        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+          pwd &&
+          echo "welcome to deploy"
+        "
